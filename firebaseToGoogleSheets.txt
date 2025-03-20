@@ -1,0 +1,52 @@
+//replace the code below in your google sheets to connect firebase with google sheets under extension => macros => appscript
+
+function getAllData() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getActiveSheet();
+  
+  var firebaseUrl = "your url";
+  var base = FirebaseApp.getDatabaseByUrl(firebaseUrl);
+
+  // Fetch data from Firebase
+  var data = base.getData();
+  
+  Logger.log(data); // Log the fetched data to view the structure
+
+  if (!data || data.length === 0) {
+    Logger.log("No data retrieved from Firebase.");
+    return;
+  }
+
+  var rows = [];
+  var rowIndex = 2; // Start from the second row, assuming the first row is headers
+
+  // Iterate over the retrieved data and populate the rows array
+  for (var key in data) {
+    if (data.hasOwnProperty(key)) {
+      var student = data[key];
+      // Adjust the following line according to the actual structure of your Firebase data
+      rows.push([student.last_attendance_time, student.name, student.total_attendance]);
+
+      // Check if the current value in the sheet is different from the new value
+      var sheetValue = sheet.getRange(rowIndex, 3).getValue();
+      if (sheetValue !== student.total_attendance) {
+        // Apply conditional formatting to highlight the cell
+        sheet.getRange(rowIndex, 3).setBackground('lightblue');
+      } else {
+        // Reset background color if there is no change
+        sheet.getRange(rowIndex, 3).setBackground(null);
+      }
+      rowIndex++;
+    }
+  }
+
+  // Ensure there is data to set in the sheet
+  if (rows.length === 0) {
+    Logger.log("No rows to set in the sheet.");
+    return;
+  }
+
+  // Set data to the sheet
+  var dataRange = sheet.getRange(2, 1, rows.length, 3);
+  dataRange.setValues(rows);
+}
